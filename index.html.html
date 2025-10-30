@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Learning Growth Dashboard — Student Tracker (Final PWA)</title>
+  <meta name="theme-color" content="#071127">
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#6ee7b7;--muted:#94a3b8;--glass:rgba(255,255,255,0.03);--success:#16a34a;--warn:#f59e0b;--danger:#ef4444}
+    *{box-sizing:border-box;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071127 0%, #051028 100%);color:#e6eef8}
+    .container{max-width:1100px;margin:20px auto;padding:16px}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between}
+    .logo{display:flex;gap:12px;align-items:center}
+    .logo .dot{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#60a5fa);display:flex;align-items:center;justify-content:center;font-weight:700;color:#042022}
+    h1{margin:0;font-size:18px}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+    .card{background:var(--card);border-radius:12px;padding:12px;margin-top:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);}
+    .top-controls{display:flex;gap:12px;align-items:center}
+    .btn{background:var(--glass);border:1px solid rgba(255,255,255,0.03);padding:8px 12px;border-radius:8px;color:var(--accent);cursor:pointer}
+    .btn.light{color:#cfeefe;background:transparent}
+    .goals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+    .goal{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:10px}
+    .goal h3{margin:0;font-size:14px}
+    .goal input.title{width:100%;margin-top:8px;padding:8px;border-radius:8px;border:none;background:transparent;color:inherit;outline:none;font-size:13px}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:8px;text-align:center;font-size:13px}
+    th{color:var(--muted);font-weight:600}
+    td .cell{display:flex;gap:6px;align-items:center;justify-content:center}
+    .dayLabel{font-size:12px;color:var(--muted)}
+    .tickBtn,.crossBtn{width:34px;height:34px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
+    .tickBtn{background:rgba(16,185,129,0.12);color:var(--success)}
+    .tickBtn.active{background:var(--success);color:#00120b}
+    .crossBtn{background:rgba(239,68,68,0.08);color:var(--danger)}
+    .crossBtn.active{background:var(--danger);color:#fff}
+    .stats{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+    .stat{flex:1;min-width:160px;background:linear-gradient(90deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:10px}
+    .stat h4{margin:0;font-size:12px;color:var(--muted)}
+    .stat p{margin:6px 0 0;font-size:18px;font-weight:700}
+    .reflection{margin-top:12px}
+    textarea{width:100%;min-height:84px;padding:10px;border-radius:8px;border:none;background:rgba(255,255,255,0.02);color:inherit;resize:vertical}
+    footer{margin-top:18px;color:var(--muted);font-size:12px}
+    @media(max-width:900px){.goals-grid{grid-template-columns:repeat(2,1fr)}header{flex-direction:column;align-items:flex-start}}
+    @media(max-width:600px){.goals-grid{grid-template-columns:1fr}.stats{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="dot">L</div>
+        <div>
+          <h1>Learning Growth Dashboard</h1>
+          <p class="lead">Track 6 weekly learning goals • Daily ✅ / ❌ • Streaks • Reflections — Installable PWA</p>
+        </div>
+      </div>
+      <div class="top-controls">
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn" id="prevWeek">◀ Prev</button>
+          <div id="weekLabel" style="min-width:160px;text-align:center;color:var(--muted)"></div>
+          <button class="btn" id="nextWeek">Next ▶</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn light" id="installBtn" style="display:none">Install App</button>
+          <button class="btn light" id="resetData">Reset All</button>
+          <button class="btn" id="exportBtn">Export JSON</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1">
+          <label class="dayLabel">Week start (Mon):</label>
+          <input type="date" id="weekStart" style="margin-left:8px;padding:6px;border-radius:8px;border:none;background:rgba(255,255,255,0.02);color:inherit" />
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="clearWeek">Clear Week</button>
+          <button class="btn" id="saveBtn">Save</button>
+        </div>
+      </div>
+
+      <div class="goals-grid" id="goalsContainer"></div>
+
+      <table id="checksTable">
+        <thead>
+          <tr>
+            <th>Goal</th>
+            <th>Mon</th>
+            <th>Tue</th>
+            <th>Wed</th>
+            <th>Thu</th>
+            <th>Fri</th>
+            <th>Sat</th>
+            <th>Sun</th>
+            <th>Completed</th>
+            <th>%</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+
+      <div class="stats">
+        <div class="stat">
+          <h4>Weekly Progress</h4>
+          <p id="weeklyPercent">0%</p>
+        </div>
+        <div class="stat">
+          <h4>Tasks Completed</h4>
+          <p id="tasksCompleted">0 / 0</p>
+        </div>
+        <div class="stat">
+          <h4>Streak (days with any ✅)</h4>
+          <p id="streakCount">0</p>
+        </div>
+        <div class="stat">
+          <h4>Current Week</h4>
+          <p id="currentWeekDisplay">—</p>
+        </div>
+      </div>
+
+      <div class="reflection">
+        <label class="dayLabel">Reflection / Notes for this week</label>
+        <textarea id="reflection" placeholder="What went well? What to improve next week?"></textarea>
+      </div>
+    </div>
+
+    <footer>
+      Saved locally in your browser per week (localStorage). Use Export JSON to backup. Service worker + manifest included for PWA install.
+    </footer>
+  </div>
+
+  <script>
+    // ====== Utilities ======
+    function isoWeekKey(date){ const d = new Date(date + 'T00:00:00'); const day = (d.getDay() + 6) % 7; const mon = new Date(d); mon.setDate(d.getDate() - day); const y = mon.getFullYear(); const m = String(mon.getMonth()+1).padStart(2,'0'); const dd = String(mon.getDate()).padStart(2,'0'); return `${y}-${m}-${dd}`; }
+    const DEFAULT_GOAL_COUNT = 6;
+    const weekdays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+    // ====== State ======
+    let state = { weekKey:'', weekStart:'', goals:[], checks:{}, reflection:'' };
+
+    // ====== DOM ======
+    const weekStartInput = document.getElementById('weekStart');
+    const goalsContainer = document.getElementById('goalsContainer');
+    const tableBody = document.getElementById('tableBody');
+    const weeklyPercentEl = document.getElementById('weeklyPercent');
+    const tasksCompletedEl = document.getElementById('tasksCompleted');
+    const streakEl = document.getElementById('streakCount');
+    const currentWeekDisplay = document.getElementById('currentWeekDisplay');
+    const reflectionEl = document.getElementById('reflection');
+    const weekLabel = document.getElementById('weekLabel');
+
+    // ====== PWA: manifest + service worker (blob) & install handling ======
+    (function(){
+      const svgIcon = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="24" fill="%23071127"/><text x="50%" y="55%" font-size="54" fill="%236ee7b7" font-family="Arial,Helvetica,sans-serif" dominant-baseline="middle" text-anchor="middle">L</text></svg>')}`;
+      const manifest = { name:'Learning Growth Dashboard', short_name:'LearnTrack', start_url:'./', display:'standalone', background_color:'#071127', theme_color:'#071127', icons:[{src:svgIcon,sizes:'192x192',type:'image/svg+xml'}] };
+      const manifestBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+      const manifestURL = URL.createObjectURL(manifestBlob);
+      const link = document.createElement('link'); link.rel='manifest'; link.href = manifestURL; document.head.appendChild(link);
+
+      const swCode = `
+        const CACHE_NAME = 'learn-tracker-v1';
+        const OFFLINE_HTML = '/';
+        self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll([])).catch(()=>{})); self.skipWaiting(); });
+        self.addEventListener('activate', event => { event.waitUntil(self.clients.claim()); });
+        self.addEventListener('fetch', event => {
+          if(event.request.mode === 'navigate'){
+            event.respondWith(fetch(event.request).catch(()=>caches.match(OFFLINE_HTML)));
+            return;
+          }
+          event.respondWith(caches.match(event.request).then(resp=>resp || fetch(event.request).then(r=>{ return caches.open(CACHE_NAME).then(cache=>{ try{ cache.put(event.request, r.clone()); }catch(e){} return r; }); }))); 
+        });
+      `;
+      try{
+        const swBlob = new Blob([swCode], {type:'application/javascript'});
+        const swUrl = URL.createObjectURL(swBlob);
+        if('serviceWorker' in navigator){ navigator.serviceWorker.register(swUrl).then(()=>console.log('SW registered')).catch(err=>console.warn('SW failed',err)); }
+      }catch(e){ console.warn('SW register error', e); }
+
+      let deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredPrompt = e; const installBtn = document.getElementById('installBtn'); if(installBtn) installBtn.style.display='inline-block'; });
+      document.getElementById('installBtn').addEventListener('click', async ()=>{ if(!deferredPrompt) return alert('Install prompt not available'); deferredPrompt.prompt(); const choice = await deferredPrompt.userChoice; deferredPrompt = null; document.getElementById('installBtn').style.display='none'; });
+    })();
+
+    // ====== Core: load/save week ======
+    function todayISO(){ const d = new Date(); return d.toISOString().slice(0,10); }
+    function loadWeek(dateStr){ const wk = isoWeekKey(dateStr); state.weekKey = wk; state.weekStart = wk; weekStartInput.value = wk; weekLabel.textContent = `Week starting ${wk}`; currentWeekDisplay.textContent = wk; const saved = localStorage.getItem('learning-tracker:'+wk); if(saved){ state = JSON.parse(saved); state.weekKey = wk; state.weekStart = wk; } else { state = { weekKey:wk, weekStart:wk, goals: Array.from({length:DEFAULT_GOAL_COUNT}).map((_,i)=>`Goal ${i+1}`), checks:{}, reflection:'' }; state.goals.forEach((g,gi)=> state.checks[gi]=Array(7).fill(null)); }
+      renderAll(); }
+
+    function saveWeek(){ state.reflection = reflectionEl.value; localStorage.setItem('learning-tracker:'+state.weekKey, JSON.stringify(state)); }
+
+    function clearWeek(){ if(!confirm('Clear all check marks and reflection for this week?')) return; state.checks = {}; state.goals.forEach((g,gi)=> state.checks[gi]=Array(7).fill(null)); state.reflection=''; reflectionEl.value=''; saveWeek(); renderAll(); }
+
+    function resetAll(){ if(!confirm('Reset ALL saved data? This will remove ALL weeks.')) return; Object.keys(localStorage).forEach(k=>{ if(k.startsWith('learning-tracker:')) localStorage.removeItem(k); }); loadWeek(todayISO()); }
+
+    // ====== Render ======
+    function renderGoalsInputs(){ goalsContainer.innerHTML=''; state.goals.forEach((g,gi)=>{
+      const box = document.createElement('div'); box.className='goal';
+      box.innerHTML = `<h3>Goal ${gi+1}</h3><input class="title" data-idx="${gi}" value="${escapeHtml(g)}" />`;
+      goalsContainer.appendChild(box);
+    });
+    goalsContainer.querySelectorAll('input.title').forEach(inp=>{ inp.addEventListener('input', e=>{ const idx=+e.target.dataset.idx; state.goals[idx]=e.target.value; }); }); }
+
+    function renderTable(){ tableBody.innerHTML=''; state.goals.forEach((g,gi)=>{
+      const tr = document.createElement('tr');
+      const titleTd = document.createElement('td'); titleTd.style.textAlign='left'; titleTd.innerHTML = `<strong>${escapeHtml(g)}</strong><div style="font-size:12px;color:var(--muted)">Edit goal title above</div>`; tr.appendChild(titleTd);
+      const row = state.checks[gi] || Array(7).fill(null);
+      for(let d=0;d<7;d++){
+        const td = document.createElement('td'); td.className='cell';
+        const tick = document.createElement('button'); tick.className='tickBtn'; tick.textContent='✓';
+        const cross = document.createElement('button'); cross.className='crossBtn'; cross.textContent='✗';
+        // set active states
+        if(row[d]===1){ tick.classList.add('active'); cross.classList.remove('active'); }
+        else if(row[d]===0){ cross.classList.add('active'); tick.classList.remove('active'); }
+        // handlers
+        tick.addEventListener('click', ()=>{ state.checks[gi][d]= state.checks[gi][d]===1? null : 1; saveWeek(); renderAll(); });
+        cross.addEventListener('click', ()=>{ state.checks[gi][d]= state.checks[gi][d]===0? null : 0; saveWeek(); renderAll(); });
+        td.appendChild(tick); td.appendChild(cross); tr.appendChild(td);
+      }
+      const completed = (row.filter(v=>v===1).length) + ' / 7';
+      const compTd = document.createElement('td'); compTd.textContent = completed; tr.appendChild(compTd);
+      const perc = Math.round((row.filter(v=>v===1).length)/7*100);
+      const percTd = document.createElement('td'); percTd.textContent = perc + '%'; tr.appendChild(percTd);
+      tableBody.appendChild(tr);
+    }); }
+
+    function renderStats(){ const totalCells = state.goals.length * 7; let done = 0; state.goals.forEach((g,gi)=>{ done += (state.checks[gi] || []).filter(v=>v===1).length; }); const percent = totalCells? Math.round(done/totalCells*100):0; weeklyPercentEl.textContent = percent + '%'; tasksCompletedEl.textContent = `${done} / ${totalCells}`; streakEl.textContent = computeStreak(); reflectionEl.value = state.reflection || ''; }
+
+    function renderAll(){ renderGoalsInputs(); renderTable(); renderStats(); }
+
+    // ====== Helpers ======
+    function toggleCheck(gi,d){ state.checks[gi] = state.checks[gi] || Array(7).fill(null); state.checks[gi][d] = !state.checks[gi][d]; saveWeek(); renderAll(); }
+    function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    // ====== Actions ======
+    document.getElementById('prevWeek').addEventListener('click', ()=>{ const cur = new Date(state.weekStart+'T00:00:00'); cur.setDate(cur.getDate()-7); loadWeek(cur.toISOString().slice(0,10)); });
+    document.getElementById('nextWeek').addEventListener('click', ()=>{ const cur = new Date(state.weekStart+'T00:00:00'); cur.setDate(cur.getDate()+7); loadWeek(cur.toISOString().slice(0,10)); });
+    weekStartInput.addEventListener('change', e=>{ if(!e.target.value) return; loadWeek(e.target.value); });
+    document.getElementById('saveBtn').addEventListener('click', ()=>{ state.reflection = reflectionEl.value; saveWeek(); alert('Saved ✅'); renderAll(); });
+    document.getElementById('clearWeek').addEventListener('click', clearWeek);
+    document.getElementById('resetData').addEventListener('click', resetAll);
+
+    document.getElementById('exportBtn').addEventListener('click', ()=>{ const blob = new Blob([ JSON.stringify({timestamp:new Date().toISOString(), backup: collectAllData()}, null, 2) ], {type:'application/json'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='learning-tracker-backup.json'; a.click(); URL.revokeObjectURL(url); });
+
+    function collectAllData(){ const out={}; Object.keys(localStorage).forEach(k=>{ if(k.startsWith('learning-tracker:')) out[k]=JSON.parse(localStorage.getItem(k)); }); return out; }
+
+    // compute streak across saved weeks: consecutive days up to today where at least one goal had ✅
+    function computeStreak(){ const today = new Date(); let count = 0; for(let i=0;i<365;i++){ const d = new Date(today); d.setDate(today.getDate()-i); const key = isoWeekKey(d.toISOString().slice(0,10)); const wk = JSON.parse(localStorage.getItem('learning-tracker:'+key) || 'null'); const dayIndex = (d.getDay()+6)%7; let any=false; if(wk && wk.checks){ Object.keys(wk.checks).forEach(k=>{ if(wk.checks[k] && wk.checks[k][dayIndex]===1) any=true; }); } if(any) count++; else break; } return count; }
+
+    function findMostRecentWeek(){ const keys=Object.keys(localStorage).filter(k=>k.startsWith('learning-tracker:')); if(!keys.length) return todayISO(); const wkDates = keys.map(k=>k.split(':')[1]); wkDates.sort(); return wkDates[wkDates.length-1]; }
+
+    reflectionEl.addEventListener('blur', ()=>{ state.reflection = reflectionEl.value; saveWeek(); });
+    window.addEventListener('beforeunload', ()=>{ state.reflection = reflectionEl.value; localStorage.setItem('learning-tracker:'+state.weekKey, JSON.stringify(state)); });
+
+    // init
+    (function(){ const recent = findMostRecentWeek(); loadWeek(recent); })();
+
+  </script>
+</body>
+</html>
